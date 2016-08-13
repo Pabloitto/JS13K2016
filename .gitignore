@@ -1,0 +1,3 @@
+node_modules
+/public/game/dist/index.js
+/public/game/dist/bundlejs/index.js
