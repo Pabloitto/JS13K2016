@@ -3,8 +3,8 @@ var moves = [];
 var cell = null;
 var context = null;
 module.exports = {
-    x : 0,
-    y : 0,
+    x: 0,
+    y: 0,
     init: function(p) {
         cells = p.cells;
         cell = p.cell;

@@ -30,6 +30,12 @@ module.exports = (function() {
                 });
             });
         },
+        fillCell: function(context, cell, color) {
+            context.fillStyle = color;
+            var x = (cell.x * cell.width) + 5;
+            var y = (cell.y * cell.height) + 5;
+            context.fillRect(x, y, cell.width / 2, cell.height / 2);
+        },
         getRandomPosition: function() {
             return {
                 x: Math.floor(Math.random() * this.width),

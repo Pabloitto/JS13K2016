@@ -1,4 +1,4 @@
 module.exports = {
-    dimensions: { x: 20, y: 20 },
+    dimensions: { x: 10, y: 10 },
     cellSize: 20
 };
