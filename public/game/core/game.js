@@ -1,9 +1,9 @@
 (function() {
     var canvas = null;
     var context = null;
-    var gameCore = require('./core/game-core');
-    var config = require('./core/config');
-    var keyevents = require('./core/keyevents');
+    var gameCore = require('./game-core');
+    var config = require('./config');
+    var keyevents = require('./keyevents');
 
     function startGame() {
         var keyEventHelper = new keyevents({

@@ -1,5 +1,7 @@
 module.exports = (function() {
 
+    var config = require('./config');
+
     function MazeGenerator(props) {
         if (props) {
             if (props.cells) {
@@ -135,8 +137,8 @@ module.exports = (function() {
             var cell = {
                 x: i,
                 y: j,
-                width: 20,
-                height: 20,
+                width: config.cellSize,
+                height: config.cellSize,
                 visited: false
             };
 

@@ -5,7 +5,7 @@ var browserify = require("browserify");
 var watchify = require("watchify");
 gulp.task("bundler", function() {
     var bundler = watchify(browserify({
-        entries: ['./public/game/game.js'],
+        entries: ['./public/game/core/game.js'],
         extensions: ['.js'],
         debug: true,
         packageCache: {},
