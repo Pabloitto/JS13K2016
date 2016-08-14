@@ -149,15 +149,50 @@ module.exports = (function() {
         createWallObject: function(cell) {
             var walls = {};
             this.names.forEach(function(name) {
-                walls[name] = {
-                    name: name,
-                    x: cell.x,
-                    y: cell.y,
-                    height: cell.height,
-                    width: cell.width
-                };
-            });
+
+                var alreadyHasWall = this.hasWall(name, cell);
+
+                if (!alreadyHasWall) {
+                    walls[name] = {
+                        name: name,
+                        x: cell.x,
+                        y: cell.y,
+                        height: cell.height,
+                        width: cell.width
+                    };
+                }
+            }, this);
             return walls;
+        },
+        hasWall: function(name, cell) {
+            var result = false;
+
+            switch (name) {
+                case "left":
+                    if (cell.x > 0 && this.cells[cell.x - 1][cell.y].walls["right"]) {
+                        result = true;
+                    }
+                    break;
+                case "right":
+                    if ((cell.x + 1) < this.cells.length && this.cells[cell.x + 1][cell.y].walls["left"]) {
+                        result = true;
+                    }
+                    break
+                case "top":
+                    if (cell.y > 0 && this.cells[cell.x][cell.y - 1].walls["bottom"]) {
+                        result = true;
+                    }
+                    break
+                case "bottom":
+                    if ((cell.y + 1) < this.cells[0].length) {
+                        var temp = this.cells[cell.x][cell.y + 1];
+                        if (temp && temp.walls["top"]) {
+                            result = true;
+                        }
+                    }
+                    break
+            }
+            return result;
         }
     };
 

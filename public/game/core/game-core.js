@@ -6,9 +6,24 @@ module.exports = (function() {
         config = require('./config'),
         MazeCore = require('./maze'),
         MazePaint = require('./maze-paint'),
-        movesHelper = require('./moves-helper'),
+        movesHelper = require('./moves-helper')(),
+        enemyIA = require("./enemy-ia"),
+        enemyMovesHelper = require("./moves-helper")(),
+        glitch = require('./libs/glitch-canvas.min'),
         maze = null,
-        currentMove = null;
+        currentMove = null,
+        enemy = null,
+        exit = null,
+        glitchMaze = null,
+        originalMaze = null,
+        lastSolution = null,
+        currentSolutionPath = null,
+        glitchActive = true,
+        gameOver = false,
+        gameIntervals = {
+            updatePath: null,
+            paintMove: null
+        };
 
     function init(p) {
         canvas = p.canvas;
@@ -31,12 +46,31 @@ module.exports = (function() {
 
         currentMove = mazeGenerator.cells[0][0];
 
+        var rdmPos = mazeGenerator.getRandomPosition();
+
+        enemy = maze.cells[rdmPos.x][rdmPos.y];
+
         movesHelper.init({
             cells: mazeGenerator.cells,
             cell: currentMove
         });
 
+        /*setInterval(function() {
+            glitchActive = false;
+            setTimeout(function() {
+                glitchActive = true;
+            }, 25000);
+        }, 2000);*/
+
+        //setInterval(createGlitch, 25000);
+
+        pursue(mazeGenerator);
+
         this.update();
+
+        originalMaze = context.getImageData(0, 0, canvas.width, canvas.height);
+
+        //createGlitch();
 
         return {
             then: function(callBack) {
@@ -47,6 +81,21 @@ module.exports = (function() {
         }
     }
 
+    function createGlitch() {
+        glitch({
+                seed: Math.random() * 99,
+                quality: Math.random() * 99,
+                amount: 35,
+                iterations: 20
+            })
+            .fromImageData(originalMaze)
+            .toDataURL()
+            .then(function(dataURL) {
+                glitchMaze = new Image();
+                glitchMaze.src = dataURL;
+            });
+    }
+
     function update() {
         this.draw();
         this.listenEvents();
@@ -55,13 +104,22 @@ module.exports = (function() {
 
     function draw() {
         context.clearRect(0, 0, canvas.width, canvas.height);
-        maze.draw(context);
+        if (glitchMaze && glitchActive === true && !gameOver) {
+            context.drawImage(glitchMaze, 0, 0, canvas.width, canvas.height);
+        } else {
+            maze.draw(context);
+        }
         if (currentMove) {
             maze.fillCell(context, currentMove, "blue");
+        }
+
+        if (enemy) {
+            maze.fillCell(context, enemy, "red");
         }
     }
 
     function listenEvents() {
+        if (gameOver) return;
         var k = keyEventHelper.getKeys();
         var commands = keyEventHelper.getKeyCommands();
         if (k[commands.UP] && movesHelper.canMoveTo("top")) {
@@ -77,6 +135,80 @@ module.exports = (function() {
             currentMove = movesHelper.moveTo("left");
             k[commands.LEFT] = 0;
         }
+    }
+
+    function pursue(mazeGenerator) {
+        gameIntervals.updatePath = setInterval(function() {
+            if (enemy && currentMove) {
+                if (lastSolution === null) {
+                    lastSolution = {
+                        x: currentMove.x,
+                        y: currentMove.y
+                    };
+                    currentSolutionPath = getSolutionPath(mazeGenerator);
+                } else {
+                    if (lastSolution.x !== currentMove.x || lastSolution.y !== currentMove.y) {
+                        lastSolution = {
+                            x: currentMove.x,
+                            y: currentMove.y
+                        };
+                        currentSolutionPath = getSolutionPath(mazeGenerator);
+                    }
+                }
+            }
+        }, 1000);
+
+        gameIntervals.paintMove = setInterval(function() {
+            if (enemy.x === currentMove.x && enemy.y === currentMove.y) {
+                onComplete();
+                return;
+            }
+            if (currentSolutionPath && currentSolutionPath.length > 0) {
+                var m = currentSolutionPath.shift();
+                if (m) {
+                    enemy.x = m.x;
+                    enemy.y = m.y;
+                }
+            }
+        }, 1000);
+
+    }
+
+    function getSolutionPath(mazeGenerator) {
+
+        if (enemyMovesHelper.alreadyInit) {
+            enemyMovesHelper.setEnd(currentMove);
+        } else {
+            enemyMovesHelper.init({
+                cells: mazeGenerator.cells,
+                end: currentMove,
+                cell: {
+                    x: enemy.x,
+                    y: enemy.y,
+                    width: enemy.width,
+                    height: enemy.height,
+                    walls: {
+                        right: enemy.walls.right,
+                        left: enemy.walls.left,
+                        top: enemy.walls.top,
+                        bottom: enemy.walls.bottom
+                    }
+                }
+            });
+        }
+
+        enemyIA.bind(enemyMovesHelper)();
+
+        return enemyMovesHelper.getMoves();
+    }
+
+    function onComplete() {
+        currentSolutionPath = null;
+        clearInterval(gameIntervals.updatePath);
+        clearInterval(gameIntervals.paintMove);
+        gameIntervals.updatePath = null;
+        gameIntervals.paintMove = null;
+        gameOver = true;
     }
 
     return {
